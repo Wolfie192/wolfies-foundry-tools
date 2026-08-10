@@ -1,30 +1,38 @@
-export async function executePartyCheckDialog(dc, skill) {
+// Accepts the single combined title string
+export async function executePartyCheckDialog(checkTitle) {
     const party = game.actors?.party;
     if (!party) return ui.notifications.warn("No active party found.");
 
     const members = party.members;
     if (members.length === 0) return ui.notifications.warn("The active party has no members.");
 
-    let dialogTitle = dc !== "??" ? `Party Results: ${skill || ""} (DC ${dc})` : "Party Results";
+    // Inject the combined string directly into the Dialog Title
+    let dialogTitle = checkTitle ? `Party Results: ${checkTitle}` : "Party Results";
 
-    // Load the external HTML template and inject the party members
     const templatePath = "modules/wolfies-foundry-tools/templates/party-check.hbs";
     const templateData = { members: members };
-    const formHtml = await renderTemplate(templatePath, templateData);
 
-    new Dialog({
-        title: dialogTitle,
+    const renderEngine = foundry.applications?.handlebars?.renderTemplate || renderTemplate;
+    const formHtml = await renderEngine(templatePath, templateData);
+
+    const { DialogV2 } = foundry.applications.api;
+
+    DialogV2.wait({
+        window: {
+            title: dialogTitle,
+            icon: "fas fa-users"
+        },
         content: formHtml,
-        buttons: {
-            submit: {
-                icon: "<i class='fas fa-check'></i>",
+        buttons: [
+            {
+                action: "submit",
                 label: "Send to GM",
-                callback: (html) => {
+                icon: "fas fa-check",
+                callback: (event, button, dialog) => {
                     let chatContent = "";
-                    const htmlNode = html[0] || html;
 
                     members.forEach(member => {
-                        const selection = htmlNode.querySelector(`select[name="${member.id}"]`)?.value || "None";
+                        const selection = dialog.element.querySelector(`select[name="${member.id}"]`)?.value || "None";
                         if (selection !== "None") {
                             let color = selection.includes("Crit Success") ? "green" :
                                 selection === "Success" ? "blue" :
@@ -33,7 +41,10 @@ export async function executePartyCheckDialog(dc, skill) {
                         }
                     });
 
-                    if (chatContent === "") return ui.notifications.info("No results were selected.");
+                    if (chatContent === "") {
+                        ui.notifications.info("No results were selected.");
+                        return;
+                    }
 
                     ChatMessage.create({
                         speaker: ChatMessage.getSpeaker({ alias: dialogTitle }),
@@ -42,8 +53,11 @@ export async function executePartyCheckDialog(dc, skill) {
                     });
                 }
             },
-            cancel: { icon: "<i class='fas fa-times'></i>", label: "Cancel" }
-        },
-        default: "submit"
-    }).render(true);
+            {
+                action: "cancel",
+                label: "Cancel",
+                icon: "fas fa-times"
+            }
+        ]
+    });
 }
