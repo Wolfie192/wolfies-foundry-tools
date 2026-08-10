@@ -8,7 +8,7 @@
     "verified": "14"
   },
   "manifest": "https://raw.githubusercontent.com/Wolfie192/wolfies-foundry-tools/refs/heads/master/module.json",
-  "download": "https://github.com/Wolfie192/wolfies-foundry-tools/releases/latest/download/module.zip",
+  "download": "https://github.com/Wolfie192/wolfies-foundry-tools/releases/download/v1.0.0/module.zip",
   "scripts": ["scripts/main.js"],
   "esmodules": ["scripts/main.js"],
   "packs": [
