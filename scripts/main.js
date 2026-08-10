@@ -3,14 +3,14 @@ import { executePartyCheckDialog } from "./dialogs.js";
 import { registerPfsSettings } from "./settings.js";
 
 Hooks.once("init", () => {
-    console.log("PFS Dynamic Journals | Initializing");
+    console.log("Wolfie's Foundry Tools | Initializing");
 
     // Load the settings from settings.js
     registerPfsSettings();
 
     // Register the Text Editor Enricher for @PFS tags
     CONFIG.TextEditor.enrichers.push({
-        pattern: /@PFS\[(.*?)\]/g,
+        pattern: /@WFT\[(.*?)\]/g,
         enricher: async (match, options) => {
             const tagData = match[1];
 
@@ -20,7 +20,7 @@ Hooks.once("init", () => {
                 if (key && value) params[key.trim()] = value.trim();
             });
 
-            const globalBaseLevel = game.settings.get("pfs-dynamic-journals", "scenarioBaseLevel");
+            const globalBaseLevel = game.settings.get("wolfies-foundry-tools", "scenarioBaseLevel");
             const baseLevel = parseInt(params.baseLevel) || globalBaseLevel;
 
             // Calculate math using imported function

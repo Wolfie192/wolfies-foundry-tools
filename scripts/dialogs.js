@@ -8,7 +8,7 @@ export async function executePartyCheckDialog(dc, skill) {
     let dialogTitle = dc !== "??" ? `Party Results: ${skill || ""} (DC ${dc})` : "Party Results";
 
     // Load the external HTML template and inject the party members
-    const templatePath = "modules/pfs-dynamic-journals/templates/party-check.hbs";
+    const templatePath = "modules/wolfies-foundry-tools/templates/party-check.hbs";
     const templateData = { members: members };
     const formHtml = await renderTemplate(templatePath, templateData);
 
