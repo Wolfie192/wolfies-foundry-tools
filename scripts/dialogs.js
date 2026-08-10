@@ -8,27 +8,54 @@ export async function executePartyCheckDialog(config, checkTitle) {
     const profMap = { "untrained": 0, "trained": 1, "expert": 2, "master": 3, "legendary": 4 };
 
     const processedMembers = members.map(actor => {
-        let validOptions = [];
+        // Use a Map to prevent duplicates and keep the lowest DC
+        let validOptionsMap = new Map();
 
         config.skills.forEach(s => {
-            let slug = s.name ? s.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : "";
-            // Find the skill on the actor (works for both standard skills and lore)
-            let actorSkill = actor.skills ? actor.skills[slug] : null;
+            let requiredRank = profMap[(s.prof || "untrained").toLowerCase()] || 0;
+            let configuredDC = parseInt(s.dc);
 
-            if (actorSkill) {
-                let requiredRank = profMap[(s.prof || "untrained").toLowerCase()] || 0;
-                if (actorSkill.rank >= requiredRank) {
-                    validOptions.push({
-                        slug: slug,
-                        name: s.name,
-                        mod: actorSkill.mod ?? actorSkill.check?.mod ?? 0,
-                        dc: parseInt(s.dc)
-                    });
+            if (s.name && s.name.toLowerCase() === "lore") {
+                if (actor.skills) {
+                    for (let [skillSlug, actorSkill] of Object.entries(actor.skills)) {
+                        if (actorSkill.lore || skillSlug.startsWith("lore-")) {
+                            if (actorSkill.rank >= requiredRank) {
+                                let existing = validOptionsMap.get(skillSlug);
+                                // Only add it if it doesn't exist, OR if this generic DC is somehow lower
+                                if (!existing || configuredDC < existing.dc) {
+                                    validOptionsMap.set(skillSlug, {
+                                        slug: skillSlug,
+                                        name: actorSkill.label || "Lore",
+                                        mod: actorSkill.mod ?? actorSkill.check?.mod ?? 0,
+                                        dc: configuredDC
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                let slug = s.name ? s.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : "";
+                let actorSkill = actor.skills ? actor.skills[slug] : null;
+
+                if (actorSkill && actorSkill.rank >= requiredRank) {
+                    let existing = validOptionsMap.get(slug);
+                    // Only add it if it doesn't exist, OR if this specific DC is lower
+                    if (!existing || configuredDC < existing.dc) {
+                        validOptionsMap.set(slug, {
+                            slug: slug,
+                            // If they have the skill, use the sheet's properly capitalized label
+                            name: actorSkill.label || s.name,
+                            mod: actorSkill.mod ?? actorSkill.check?.mod ?? 0,
+                            dc: configuredDC
+                        });
+                    }
                 }
             }
         });
 
-        return { id: actor.id, name: actor.name, validOptions: validOptions };
+        // Convert the Map back into a flat array for the Handlebars template
+        return { id: actor.id, name: actor.name, validOptions: Array.from(validOptionsMap.values()) };
     });
 
     let dialogTitle = checkTitle ? `${config.secret ? 'Secret ' : ''}Check: ${checkTitle}` : "Party Results";
@@ -39,7 +66,6 @@ export async function executePartyCheckDialog(config, checkTitle) {
 
     const { DialogV2 } = foundry.applications.api;
 
-    // We create a tiny custom class to securely attach our math listeners
     class PartyCheckDialog extends DialogV2 {
         _onRender(context, options) {
             super._onRender(context, options);
@@ -61,15 +87,13 @@ export async function executePartyCheckDialog(config, checkTitle) {
                 if (isNaN(val)) return;
 
                 let total = isSecret ? val + mod : val;
-                let degree = 0; // 0: CF, 1: F, 2: S, 3: CS
+                let degree = 0;
 
-                // Standard success margins
                 if (total >= dc + 10) degree = 3;
                 else if (total >= dc) degree = 2;
                 else if (total <= dc - 10) degree = 0;
                 else degree = 1;
 
-                // Adjust for Natural 1 and Natural 20
                 if (isSecret) {
                     if (val === 20) degree = Math.min(degree + 1, 3);
                     if (val === 1) degree = Math.max(degree - 0, 0) - 1;
@@ -80,14 +104,12 @@ export async function executePartyCheckDialog(config, checkTitle) {
                 overrideSelect.value = degreeMap[degree];
             };
 
-            // Attach the math listeners directly to the rendered HTML elements
             this.element.querySelectorAll('.roll-input, .skill-select').forEach(el => {
                 el.addEventListener('input', evaluateRow);
             });
         }
     }
 
-    // Launch the window, strictly passing ONE combined configuration object
     PartyCheckDialog.wait({
         id: "wft-party-check-dialog",
         window: {
@@ -117,7 +139,8 @@ export async function executePartyCheckDialog(config, checkTitle) {
                         const selection = row.querySelector('.override-select').value;
                         if (selection !== "None") {
                             const skillSelect = row.querySelector('.skill-select');
-                            const skillName = skillSelect.options[skillSelect.selectedIndex].text.split(" ")[0];
+
+                            const skillName = skillSelect.options[skillSelect.selectedIndex].text.split(" (")[0];
 
                             let color = selection.includes("Crit Success") ? "green" :
                                 selection === "Success" ? "blue" :
