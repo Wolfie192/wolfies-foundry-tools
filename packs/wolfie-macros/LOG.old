@@ -1,3 +1,13 @@
-2026/08/09-19:02:02.479 8ab8 Recovering log #6
-2026/08/09-19:02:02.493 8ab8 Delete type=0 #6
-2026/08/09-19:02:02.493 8ab8 Delete type=3 #4
+2026/08/10-15:03:02.872 6098 Delete type=3 #1
+2026/08/10-15:03:02.874 db88 Compacting 4@0 + 0@1 files
+2026/08/10-15:03:02.878 db88 Generated table #16@0: 3 keys, 12504 bytes
+2026/08/10-15:03:02.878 db88 Compacted 4@0 + 0@1 files => 12504 bytes
+2026/08/10-15:03:02.885 db88 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/08/10-15:03:02.885 db88 Delete type=2 #5
+2026/08/10-15:03:02.885 db88 Delete type=2 #10
+2026/08/10-15:03:02.885 db88 Delete type=2 #12
+2026/08/10-15:03:02.886 db88 Delete type=2 #13
+2026/08/10-15:20:55.914 db88 Level-0 table #18: started
+2026/08/10-15:20:55.914 db88 Level-0 table #18: 0 bytes OK
+2026/08/10-15:20:55.928 db88 Delete type=0 #15
+2026/08/10-15:20:55.962 db88 Manual compaction at level-0 from '!macros!8DWfg2SW1WFBLFnz' @ 72057594037927935 : 1 .. '!macros!wuj53xiZSJZB4TyF' @ 0 : 0; will stop at (end)

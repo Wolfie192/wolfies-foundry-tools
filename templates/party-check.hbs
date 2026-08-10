@@ -1,23 +1,43 @@
 <form>
-    <table style="width: 100%; margin-bottom: 10px; text-align: left;">
+    <table style="width: 100%; margin-bottom: 10px; text-align: left; border-collapse: collapse;">
         <thead>
-        <tr>
-            <th>Character</th>
-            <th>Result</th>
+        <tr style="border-bottom: 1px solid #777;">
+            <th style="padding-bottom: 5px;">Character</th>
+            <th style="padding-bottom: 5px;">Skill</th>
+            <th style="padding-bottom: 5px; text-align: center;">{{#if config.secret}}D20 Roll{{else}}Total{{/if}}</th>
+            <th style="padding-bottom: 5px;">Result</th>
         </tr>
         </thead>
         <tbody>
         {{#each members}}
             <tr>
                 <td style="padding: 5px 0;"><strong>{{this.name}}</strong></td>
-                <td>
-                    <select name="{{this.id}}" style="width: 100%;">
-                        <option value="None" selected>None</option>
-                        <option value="Crit Success">Crit Success</option>
-                        <option value="Success">Success</option>
-                        <option value="Failure">Failure</option>
-                        <option value="Crit Failure">Crit Failure</option>
-                    </select>
+                <td style="padding: 5px 5px 5px 0;">
+                    {{#if this.validOptions.length}}
+                        <select class="skill-select" style="width: 100%; text-overflow: ellipsis;">
+                            {{#each this.validOptions}}
+                                <option value="{{this.slug}}" data-dc="{{this.dc}}" data-mod="{{this.mod}}">{{this.name}} {{#if ../../config.secret}}(+{{this.mod}}){{/if}}</option>
+                            {{/each}}
+                        </select>
+                    {{else}}
+                        <span style="color: #888; font-style: italic; font-size: 13px;">Unqualified</span>
+                    {{/if}}
+                </td>
+                <td style="padding: 5px 5px 5px 0; text-align: center;">
+                    {{#if this.validOptions.length}}
+                        <input type="number" class="roll-input {{#if ../config.secret}}d20-input{{else}}total-input{{/if}}" style="width: 50px; text-align: center;" placeholder="{{#if ../config.secret}}d20{{else}}Total{{/if}}">
+                    {{/if}}
+                </td>
+                <td style="padding: 5px 0;">
+                    {{#if this.validOptions.length}}
+                        <select name="{{this.id}}" class="override-select" style="width: 100%;">
+                            <option value="None" selected>None</option>
+                            <option value="Crit Success">Crit Success</option>
+                            <option value="Success">Success</option>
+                            <option value="Failure">Failure</option>
+                            <option value="Crit Failure">Crit Failure</option>
+                        </select>
+                    {{/if}}
                 </td>
             </tr>
         {{/each}}
