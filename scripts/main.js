@@ -6,19 +6,23 @@ Hooks.once("init", () => {
     console.log("Wolfie's Foundry Tools | Initializing");
     registerPfsSettings();
 
+    // ========================================================================
+    // GLOBAL EVENT DELEGATION
+    // ========================================================================
     document.addEventListener("click", (ev) => {
+        // 1. Party Checks
         const dcBtn = ev.target.closest(".wft-dc-btn");
         if (dcBtn) {
             ev.preventDefault();
             ev.stopPropagation();
 
-            // Extract the encoded config object
             const config = JSON.parse(decodeURIComponent(dcBtn.dataset.config));
             const title = dcBtn.dataset.title;
             executePartyCheckDialog(config, title);
             return;
         }
 
+        // 2. Encounter Macros
         const macroBtn = ev.target.closest(".wft-macro-btn");
         if (macroBtn) {
             ev.preventDefault();
@@ -27,9 +31,30 @@ Hooks.once("init", () => {
             const macro = game.macros.getName(macroName);
             if (macro) macro.execute();
             else ui.notifications.warn(`Macro "${macroName}" not found.`);
+            return;
+        }
+
+        // 3. Treasure Links
+        const treasureBtn = ev.target.closest(".wft-treasure-btn");
+        if (treasureBtn) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const uuid = treasureBtn.dataset.uuid;
+
+            if (uuid) {
+                // Fetch the item from the UUID and command Foundry to render its character sheet
+                fromUuid(uuid).then(item => {
+                    if (item) item.sheet.render(true);
+                    else ui.notifications.warn("Item not found. It may have been deleted or the UUID is incorrect.");
+                });
+            }
+            return;
         }
     });
 
+    // ========================================================================
+    // TEXT ENRICHER
+    // ========================================================================
     CONFIG.TextEditor.enrichers.push({
         pattern: /@WFT\[(.*?)\]/g,
         enricher: async (match, options) => {
@@ -48,7 +73,6 @@ Hooks.once("init", () => {
                 let displayParts = [];
                 let isMulti = "low_0" in params || "high_0" in params || "skill_0" in params;
 
-                // Build the configuration object
                 let checkConfig = {
                     secret: params.secret === "true",
                     skills: []
@@ -83,6 +107,23 @@ Hooks.once("init", () => {
                 if (macroName) span.innerHTML = `<a class="content-link wft-macro-btn" draggable="true" data-macro="${macroName}"><i class="fas fa-terminal"></i> ${macroName} (Tier ${tier.toUpperCase()})</a>`;
                 else span.innerText = "[No Macro Configured]";
             }
+            else if (params.type === "treasure") {
+                let itemTier = (params.tier || "both").toLowerCase();
+                let isActive = itemTier === "both" || itemTier === tier;
+
+                let qty = params.qty ? `${params.qty}x ` : "";
+                let displayName = params.name || "Unknown Item";
+                let uuid = params.uuid || "";
+
+                if (isActive) {
+                    // Include the custom wft-treasure-btn class for the click listener
+                    span.innerHTML = `<span style="font-weight: bold; margin-right: 4px;">${qty}</span><a class="content-link wft-treasure-btn" data-uuid="${uuid}" draggable="true"><i class="fas fa-suitcase"></i> ${displayName}</a>`;
+                } else {
+                    // Completely hide the item if it does not belong to the active party's tier
+                    span.style.display = "none";
+                }
+            }
+
             return span;
         }
     });
