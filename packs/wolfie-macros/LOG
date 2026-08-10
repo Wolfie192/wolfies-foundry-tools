@@ -1,1 +1,5 @@
-2026/08/09-17:37:30.672 70c0 Delete type=3 #1
+2026/08/09-19:21:05.699 45dc Recovering log #8
+2026/08/09-19:21:05.699 45dc Level-0 table #10: started
+2026/08/09-19:21:05.711 45dc Level-0 table #10: 3327 bytes OK
+2026/08/09-19:21:05.724 45dc Delete type=0 #8
+2026/08/09-19:21:05.725 45dc Delete type=3 #7
