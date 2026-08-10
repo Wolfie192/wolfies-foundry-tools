@@ -1,0 +1,27 @@
+{
+  "id": "wolfies-foundry-tools",
+  "title": "Wolfie's Foundry Tools",
+  "description": "A series of tools for Foundry made by Wolfie.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "14"
+  },
+  "manifest": "https://raw.githubusercontent.com/Wolfie192/wolfies-foundry-tools/refs/heads/master/module.json",
+  "download": "https://github.com/Wolfie192/wolfies-foundry-tools/releases/latest/download/module.zip",
+  "scripts": ["scripts/main.js"],
+  "esmodules": ["scripts/main.js"],
+  "packs": [
+    {
+      "name": "wolfie-macros",
+      "label": "Wolfie's Tools",
+      "path": "packs/wolfie-macros",
+      "type": "Macro",
+      "system": "pf2e",
+      "ownership": {
+        "PLAYER": "NONE",
+        "ASSISTANT": "OWNER"
+      }
+    }
+  ]
+}
