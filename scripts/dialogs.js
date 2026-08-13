@@ -4,61 +4,63 @@ export async function executePartyCheckDialog(config, checkTitle) {
     const members = party.members;
     if (members.length === 0) return ui.notifications.warn("The active party has no members.");
 
-    // Map string proficiencies to PF2e Rank numbers
-    const profMap = { "untrained": 0, "trained": 1, "expert": 2, "master": 3, "legendary": 4 };
-
     const processedMembers = members.map(actor => {
-        // Use a Map to prevent duplicates and keep the lowest DC
         let validOptionsMap = new Map();
 
         config.skills.forEach(s => {
-            let requiredRank = profMap[(s.prof || "untrained").toLowerCase()] || 0;
             let configuredDC = parseInt(s.dc);
 
             if (s.name && s.name.toLowerCase() === "lore") {
+                let actorGenericLore = actor.skills ? actor.skills.lore : null;
+                let genericMod = actorGenericLore ? (actorGenericLore.mod ?? actorGenericLore.check?.mod ?? 0) : 0;
+
+                let genericExisting = validOptionsMap.get("lore");
+                if (!genericExisting || configuredDC < genericExisting.dc) {
+                    validOptionsMap.set("lore", { slug: "lore", name: "Lore", dc: configuredDC, mod: genericMod });
+                }
+
                 if (actor.skills) {
                     for (let [skillSlug, actorSkill] of Object.entries(actor.skills)) {
                         if (actorSkill.lore || skillSlug.startsWith("lore-")) {
-                            if (actorSkill.rank >= requiredRank) {
-                                let existing = validOptionsMap.get(skillSlug);
-                                // Only add it if it doesn't exist, OR if this generic DC is somehow lower
-                                if (!existing || configuredDC < existing.dc) {
-                                    validOptionsMap.set(skillSlug, {
-                                        slug: skillSlug,
-                                        name: actorSkill.label || "Lore",
-                                        mod: actorSkill.mod ?? actorSkill.check?.mod ?? 0,
-                                        dc: configuredDC
-                                    });
-                                }
+                            let existing = validOptionsMap.get(skillSlug);
+                            if (!existing || configuredDC < existing.dc) {
+                                validOptionsMap.set(skillSlug, {
+                                    slug: skillSlug,
+                                    name: actorSkill.label || "Lore",
+                                    dc: configuredDC,
+                                    mod: actorSkill.mod ?? actorSkill.check?.mod ?? 0
+                                });
                             }
                         }
                     }
                 }
             } else {
                 let slug = s.name ? s.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : "";
-                let actorSkill = actor.skills ? actor.skills[slug] : null;
-
-                if (actorSkill && actorSkill.rank >= requiredRank) {
-                    let existing = validOptionsMap.get(slug);
-                    // Only add it if it doesn't exist, OR if this specific DC is lower
-                    if (!existing || configuredDC < existing.dc) {
-                        validOptionsMap.set(slug, {
-                            slug: slug,
-                            // If they have the skill, use the sheet's properly capitalized label
-                            name: actorSkill.label || s.name,
-                            mod: actorSkill.mod ?? actorSkill.check?.mod ?? 0,
-                            dc: configuredDC
-                        });
-                    }
+                let existing = validOptionsMap.get(slug);
+                if (!existing || configuredDC < existing.dc) {
+                    let actorSkill = actor.skills ? actor.skills[slug] : null;
+                    validOptionsMap.set(slug, {
+                        slug: slug,
+                        name: actorSkill ? actorSkill.label : s.name,
+                        dc: configuredDC,
+                        mod: actorSkill ? (actorSkill.mod ?? actorSkill.check?.mod ?? 0) : 0
+                    });
                 }
             }
         });
 
-        // Convert the Map back into a flat array for the Handlebars template
-        return { id: actor.id, name: actor.name, validOptions: Array.from(validOptionsMap.values()) };
+        let autoRoll = Math.floor(Math.random() * 20) + 1;
+
+        return {
+            id: actor.id,
+            name: actor.name,
+            validOptions: Array.from(validOptionsMap.values()),
+            autoRoll: autoRoll
+        };
     });
 
-    let dialogTitle = checkTitle ? `${config.secret ? 'Secret ' : ''}Check: ${checkTitle}` : "Party Results";
+    // Simplify the dialog title
+    let dialogTitle = config.secret ? "Secret Party Check" : "Party Check";
 
     const templateData = { members: processedMembers, config: config };
     const renderEngine = foundry.applications?.handlebars?.renderTemplate || renderTemplate;
@@ -75,18 +77,30 @@ export async function executePartyCheckDialog(config, checkTitle) {
                 const rollInput = row.querySelector('.roll-input');
                 const skillSelect = row.querySelector('.skill-select');
                 const overrideSelect = row.querySelector('.override-select');
+                const modInput = row.querySelector('.mod-input');
 
                 const selectedOption = skillSelect.options[skillSelect.selectedIndex];
                 if (!selectedOption || !rollInput.value) return;
 
                 const dc = parseInt(selectedOption.dataset.dc);
-                const mod = parseInt(selectedOption.dataset.mod);
                 const isSecret = rollInput.classList.contains('d20-input');
-                const val = parseInt(rollInput.value);
 
+                if (e.target === skillSelect && isSecret && modInput) {
+                    modInput.value = selectedOption.dataset.mod;
+                }
+
+                const val = parseInt(rollInput.value);
                 if (isNaN(val)) return;
 
-                let total = isSecret ? val + mod : val;
+                let total = val;
+
+                if (isSecret) {
+                    if (!modInput || modInput.value === "") return;
+                    const mod = parseInt(modInput.value);
+                    if (isNaN(mod)) return;
+                    total = val + mod;
+                }
+
                 let degree = 0;
 
                 if (total >= dc + 10) degree = 3;
@@ -104,7 +118,11 @@ export async function executePartyCheckDialog(config, checkTitle) {
                 overrideSelect.value = degreeMap[degree];
             };
 
-            this.element.querySelectorAll('.roll-input, .skill-select').forEach(el => {
+            this.element.querySelectorAll('.roll-input').forEach(el => {
+                evaluateRow({ target: el });
+            });
+
+            this.element.querySelectorAll('.roll-input, .mod-input, .skill-select').forEach(el => {
                 el.addEventListener('input', evaluateRow);
             });
         }
@@ -118,7 +136,7 @@ export async function executePartyCheckDialog(config, checkTitle) {
             resizable: false
         },
         position: {
-            width: 525,
+            width: 585,
             height: "auto"
         },
         content: formHtml,
@@ -139,7 +157,6 @@ export async function executePartyCheckDialog(config, checkTitle) {
                         const selection = row.querySelector('.override-select').value;
                         if (selection !== "None") {
                             const skillSelect = row.querySelector('.skill-select');
-
                             const skillName = skillSelect.options[skillSelect.selectedIndex].text.split(" (")[0];
 
                             let color = selection.includes("Crit Success") ? "green" :

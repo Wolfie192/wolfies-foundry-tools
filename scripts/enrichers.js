@@ -15,9 +15,8 @@ export function registerEnrichers() {
             const span = document.createElement("span");
             span.classList.add("pfs-dynamic-value");
 
-            // 1. Skill Checks
             if (params.type === "dc") {
-                let displayParts = [];
+                let buttonLabels = [];
                 let isMulti = "low_0" in params || "high_0" in params || "skill_0" in params;
 
                 let checkConfig = {
@@ -25,23 +24,57 @@ export function registerEnrichers() {
                     skills: []
                 };
 
+                const getProfName = (prof) => {
+                    if (prof === "trained") return "Trained";
+                    if (prof === "expert") return "Expert";
+                    if (prof === "master") return "Master";
+                    if (prof === "legendary") return "Legendary";
+                    return "";
+                };
+
                 if (!isMulti) {
                     let finalDC = params[bracket] || params[tier] || params.low || "??";
-                    checkConfig.skills.push({ name: params.skill, dc: finalDC, prof: params.prof || "untrained" });
-                    let skillText = params.skill ? `${params.skill} ` : "";
-                    displayParts.push(`${skillText}(DC ${finalDC})`.trim());
+
+                    checkConfig.skills.push({
+                        act: params.act || "",
+                        name: params.skill || "",
+                        profName: getProfName(params.prof),
+                        prof: params.prof || "untrained",
+                        dc: finalDC
+                    });
+
+                    buttonLabels.push(params.act || params.skill || "Skill");
                 } else {
                     let i = 0;
                     while (params[`low_${i}`] || params[`high_${i}`] || params[`skill_${i}`]) {
                         let finalDC = params[`${bracket}_${i}`] || params[`${tier}_${i}`] || params[`low_${i}`] || "??";
-                        checkConfig.skills.push({ name: params[`skill_${i}`], dc: finalDC, prof: params[`prof_${i}`] || "untrained" });
-                        let skillText = params[`skill_${i}`] ? `${params[`skill_${i}`]} ` : "";
-                        displayParts.push(`${skillText}(DC ${finalDC})`.trim());
+
+                        checkConfig.skills.push({
+                            act: params[`act_${i}`] || "",
+                            name: params[`skill_${i}`] || "",
+                            profName: getProfName(params[`prof_${i}`]),
+                            prof: params[`prof_${i}`] || "untrained",
+                            dc: finalDC
+                        });
+
+                        buttonLabels.push(params[`act_${i}`] || params[`skill_${i}`] || "Skill");
                         i++;
                     }
                 }
 
-                let combinedText = displayParts.join(" or ");
+                // FIX: Use a Set to strip out duplicate labels so "Recall Knowledge" only appears once
+                let uniqueLabels = [...new Set(buttonLabels)];
+
+                let combinedText = "";
+                if (uniqueLabels.length === 1) {
+                    combinedText = `${uniqueLabels[0]} Check`;
+                } else if (uniqueLabels.length === 2) {
+                    combinedText = `${uniqueLabels[0]} or ${uniqueLabels[1]} Check`;
+                } else {
+                    let last = uniqueLabels.pop();
+                    combinedText = `${uniqueLabels.join(", ")}, or ${last} Check`;
+                }
+
                 let encodedConfig = encodeURIComponent(JSON.stringify(checkConfig));
 
                 span.innerHTML = `<a class="content-link wft-dc-btn" data-title="${combinedText}" data-config="${encodedConfig}">
@@ -49,13 +82,11 @@ export function registerEnrichers() {
                 </a>`;
                 span.title = `Tier: ${tier.toUpperCase()} | CP: ${cp} (${playerCount} players) | Base Level: ${baseLevel}`;
             }
-            // 2. Encounter Macros
             else if (params.type === "macro") {
                 let macroName = params[bracket] || params[tier] || params.low;
                 if (macroName) span.innerHTML = `<a class="content-link wft-macro-btn" draggable="true" data-macro="${macroName}"><i class="fas fa-terminal"></i> ${macroName} (Tier ${tier.toUpperCase()})</a>`;
                 else span.innerText = "[No Macro Configured]";
             }
-            // 3. Treasure
             else if (params.type === "treasure") {
                 let itemTier = (params.tier || "both").toLowerCase();
                 let isActive = itemTier === "both" || itemTier === tier;
