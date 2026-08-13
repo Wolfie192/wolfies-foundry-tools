@@ -6,8 +6,13 @@ export function registerEnrichers() {
         enricher: async (match, options) => {
             const params = {};
             match[1].split("|").forEach(part => {
-                const [key, value] = part.split(":");
-                if (key && value) params[key.trim()] = value.trim();
+                // FIX: Only split on the FIRST colon so names like "Setup: Scene" don't break the parser
+                const colonIdx = part.indexOf(":");
+                if (colonIdx !== -1) {
+                    const key = part.substring(0, colonIdx).trim();
+                    const value = part.substring(colonIdx + 1).trim();
+                    if (key && value) params[key] = value;
+                }
             });
 
             const baseLevel = parseInt(params.baseLevel) || game.settings.get("wolfies-foundry-tools", "scenarioBaseLevel");
@@ -62,7 +67,6 @@ export function registerEnrichers() {
                     }
                 }
 
-                // FIX: Use a Set to strip out duplicate labels so "Recall Knowledge" only appears once
                 let uniqueLabels = [...new Set(buttonLabels)];
 
                 let combinedText = "";
