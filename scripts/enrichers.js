@@ -6,7 +6,6 @@ export function registerEnrichers() {
         enricher: async (match, options) => {
             const params = {};
             match[1].split("|").forEach(part => {
-                // FIX: Only split on the FIRST colon so names like "Setup: Scene" don't break the parser
                 const colonIdx = part.indexOf(":");
                 if (colonIdx !== -1) {
                     const key = part.substring(0, colonIdx).trim();
@@ -81,9 +80,7 @@ export function registerEnrichers() {
 
                 let encodedConfig = encodeURIComponent(JSON.stringify(checkConfig));
 
-                span.innerHTML = `<a class="content-link wft-dc-btn" data-title="${combinedText}" data-config="${encodedConfig}">
-                    <i class="fas ${checkConfig.secret ? 'fa-eye-slash' : 'fa-dice-d20'}"></i> ${combinedText}
-                </a>`;
+                span.innerHTML = `<a class="content-link wft-dc-btn" data-title="${combinedText}" data-config="${encodedConfig}"><i class="fas ${checkConfig.secret ? 'fa-eye-slash' : 'fa-dice-d20'}"></i> ${combinedText}</a>`;
                 span.title = `Tier: ${tier.toUpperCase()} | CP: ${cp} (${playerCount} players) | Base Level: ${baseLevel}`;
             }
             else if (params.type === "macro") {
@@ -103,6 +100,21 @@ export function registerEnrichers() {
                     span.innerHTML = `<span style="font-weight: bold; margin-right: 4px;">${qty}</span><a class="content-link wft-treasure-btn" data-uuid="${uuid}" draggable="true"><i class="fas fa-suitcase"></i> ${displayName}</a>`;
                 } else {
                     span.style.display = "none";
+                }
+            }
+            // NEW: Journal Variables
+            else if (params.type === "var") {
+                let id = params.id;
+                let vars = game.settings.get("wolfies-foundry-tools", "variables") || {};
+                let v = vars[id];
+
+                if (!v) {
+                    span.innerHTML = `<span style="color: red; font-weight: bold;">[Variable "${id}" Not Found]</span>`;
+                } else {
+                    let displayVal = v.value;
+                    if (v.type === "bool") displayVal = v.value ? "True" : "False";
+
+                    span.innerHTML = `<a class="content-link wft-var-btn" data-id="${id}" style="background: #e8f4f8; border: 1px solid #7da6b3; color: #222;"><i class="fas fa-calculator" style="color: #4a8094;"></i> <strong>${v.name}:</strong> ${displayVal}</a>`;
                 }
             }
 

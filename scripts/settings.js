@@ -36,4 +36,13 @@ export function registerPfsSettings() {
         type: Number,
         default: 1
     });
+
+    // NEW: Hidden database setting to store your global journal variables
+    game.settings.register("wolfies-foundry-tools", "variables", {
+        name: "Global Variables",
+        scope: "world",
+        config: false,
+        type: Object,
+        default: {}
+    });
 }
