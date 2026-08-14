@@ -45,4 +45,11 @@ export function registerPfsSettings() {
         type: Object,
         default: {}
     });
+
+    game.settings.register("wolfies-foundry-tools", "activeResearchEncounter", {
+        scope: "world",
+        config: false,
+        type: Object,
+        default: null
+    });
 }

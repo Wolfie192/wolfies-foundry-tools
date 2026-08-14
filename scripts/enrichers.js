@@ -19,6 +19,9 @@ export function registerEnrichers() {
             const span = document.createElement("span");
             span.classList.add("pfs-dynamic-value");
 
+            // Common wrapping style to apply to all WFT buttons
+            const wrapStyle = "white-space: normal; word-break: break-word; height: auto; display: inline-block; line-height: 1.2; padding-top: 2px; padding-bottom: 2px;";
+
             if (params.type === "dc") {
                 let buttonLabels = [];
                 let isMulti = "low_0" in params || "high_0" in params || "skill_0" in params;
@@ -80,12 +83,12 @@ export function registerEnrichers() {
 
                 let encodedConfig = encodeURIComponent(JSON.stringify(checkConfig));
 
-                span.innerHTML = `<a class="content-link wft-dc-btn" data-title="${combinedText}" data-config="${encodedConfig}"><i class="fas ${checkConfig.secret ? 'fa-eye-slash' : 'fa-dice-d20'}"></i> ${combinedText}</a>`;
+                span.innerHTML = `<a class="content-link wft-dc-btn" data-title="${combinedText}" data-config="${encodedConfig}" style="${wrapStyle}"><i class="fas ${checkConfig.secret ? 'fa-eye-slash' : 'fa-dice-d20'}"></i> ${combinedText}</a>`;
                 span.title = `Tier: ${tier.toUpperCase()} | CP: ${cp} (${playerCount} players) | Base Level: ${baseLevel}`;
             }
             else if (params.type === "macro") {
                 let macroName = params[bracket] || params[tier] || params.low;
-                if (macroName) span.innerHTML = `<a class="content-link wft-macro-btn" draggable="true" data-macro="${macroName}"><i class="fas fa-terminal"></i> ${macroName} (Tier ${tier.toUpperCase()})</a>`;
+                if (macroName) span.innerHTML = `<a class="content-link wft-macro-btn" draggable="true" data-macro="${macroName}" style="${wrapStyle}"><i class="fas fa-terminal"></i> ${macroName} (Tier ${tier.toUpperCase()})</a>`;
                 else span.innerText = "[No Macro Configured]";
             }
             else if (params.type === "treasure") {
@@ -97,12 +100,11 @@ export function registerEnrichers() {
                 let uuid = params.uuid || "";
 
                 if (isActive) {
-                    span.innerHTML = `<span style="font-weight: bold; margin-right: 4px;">${qty}</span><a class="content-link wft-treasure-btn" data-uuid="${uuid}" draggable="true"><i class="fas fa-suitcase"></i> ${displayName}</a>`;
+                    span.innerHTML = `<span style="font-weight: bold; margin-right: 4px;">${qty}</span><a class="content-link wft-treasure-btn" data-uuid="${uuid}" draggable="true" style="${wrapStyle}"><i class="fas fa-suitcase"></i> ${displayName}</a>`;
                 } else {
                     span.style.display = "none";
                 }
             }
-            // NEW: Journal Variables
             else if (params.type === "var") {
                 let id = params.id;
                 let vars = game.settings.get("wolfies-foundry-tools", "variables") || {};
@@ -114,7 +116,7 @@ export function registerEnrichers() {
                     let displayVal = v.value;
                     if (v.type === "bool") displayVal = v.value ? "True" : "False";
 
-                    span.innerHTML = `<a class="content-link wft-var-btn" data-id="${id}" style="background: #e8f4f8; border: 1px solid #7da6b3; color: #222;"><i class="fas fa-calculator" style="color: #4a8094;"></i> <strong>${v.name}:</strong> ${displayVal}</a>`;
+                    span.innerHTML = `<a class="content-link wft-var-btn" data-id="${id}" style="${wrapStyle} background: #e8f4f8; border: 1px solid #7da6b3; color: #222;"><i class="fas fa-calculator" style="color: #4a8094;"></i> <strong>${v.name}:</strong> ${displayVal}</a>`;
                 }
             }
 

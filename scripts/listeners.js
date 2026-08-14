@@ -1,20 +1,114 @@
 import { executePartyCheckDialog } from "./dialogs.js";
 
+// --- THE PLAYER DISPLAY WINDOW ---
+const { ApplicationV2 } = foundry.applications.api;
+class ResearchPlayerApp extends ApplicationV2 {
+    static DEFAULT_OPTIONS = {
+        id: "wft-research-player",
+        title: "Research Encounter",
+        tag: "div",
+        window: { icon: "fas fa-search-location", width: 600, resizable: true },
+        position: { height: "auto" }
+    };
+
+    state = null;
+
+    updateState(newState) {
+        this.state = newState;
+        const existing = Object.values(ui.windows).find(w => w.id === "wft-research-player");
+        if (existing) {
+            existing.render(false);
+        } else {
+            this.render(true);
+        }
+    }
+
+    async _renderHTML(context, options) {
+        if (!this.state) return `<div style="padding: 20px; text-align: center; font-style: italic;">Waiting for GM to initialize encounter...</div>`;
+        const d = this.state;
+
+        let roundText = d.maxRounds ? `Round ${d.round} / ${d.maxRounds}` : `Round ${d.round}`;
+
+        let html = `
+            <div style="padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4a8094; padding-bottom: 10px; margin-bottom: 15px;">
+                    <div style="font-size: 18px; font-weight: bold; color: #4a8094;">${d.name}</div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 14px; font-weight: bold;">${roundText}</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #8a1a1b;">Party RP: ${d.totalRP}</div>
+                    </div>
+                </div>
+        `;
+
+        if (d.locations.length > 0) {
+            html += `<h3 style="margin-top: 0; border-bottom: 1px solid #777;"><i class="fas fa-map-marker-alt"></i> Known Locations</h3>`;
+            for (let loc of d.locations) {
+                html += `
+                    <div style="border: 1px solid #ccc; border-left: 4px solid #4a8094; background: rgba(74, 128, 148, 0.05); border-radius: 4px; padding: 8px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 6px;">
+                            <strong style="font-size: 14px;">${loc.name}</strong>
+                            <span style="font-size: 13px; font-weight: bold; color: #4a8094;">RP: ${loc.currentRP} / ${loc.maxRP || "∞"}</span>
+                        </div>
+                        ${loc.checksHtml ? `<div style="margin-bottom: 6px;">${loc.checksHtml}</div>` : ''}
+                        <div style="font-size: 13px; line-height: 1.4;">${loc.descHtml}</div>
+                    </div>
+                `;
+            }
+        } else {
+            html += `<div style="font-style: italic; color: #777; margin-bottom: 15px; font-size: 12px;">No locations revealed yet.</div>`;
+        }
+
+        if (d.breakpoints.length > 0) {
+            html += `<h3 style="margin-top: 15px; border-bottom: 1px solid #777;"><i class="fas fa-chart-line"></i> Breakpoints</h3>`;
+            for (let bp of d.breakpoints) {
+                let reachStyle = bp.isReached ? 'box-shadow: 0 0 5px rgba(74, 128, 148, 0.5);' : 'opacity: 0.7;';
+                html += `
+                    <div style="border: 1px solid #ccc; border-left: 4px solid #4a8094; ${reachStyle} background: rgba(74, 128, 148, 0.05); border-radius: 4px; padding: 8px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 6px;">
+                            <strong style="font-size: 14px;">Threshold: ${bp.threshold} RP</strong>
+                            ${bp.isReached ? `<span style="font-size: 11px; font-weight: bold; color: #4a945a;"><i class="fas fa-check"></i> Reached</span>` : ''}
+                        </div>
+                        <div style="font-size: 13px; line-height: 1.4;">${bp.descHtml}</div>
+                    </div>
+                `;
+            }
+        }
+
+        html += `</div>`;
+        return html;
+    }
+
+    _replaceHTML(result, content, options) {
+        content.innerHTML = result;
+    }
+}
+// ------------------------------------------
+
 export function registerGlobalListeners() {
+    Hooks.on("updateUser", (user, changes) => {
+        if (user.isGM && foundry.utils.hasProperty(changes, "flags.wolfies-foundry-tools.researchSync")) {
+            if (game.user.isGM) return;
+
+            const data = user.getFlag("wolfies-foundry-tools", "researchSync");
+            if (data) {
+                if (!window.wftResearchPlayerApp) {
+                    window.wftResearchPlayerApp = new ResearchPlayerApp();
+                }
+                window.wftResearchPlayerApp.updateState(data);
+            }
+        }
+    });
+
     document.addEventListener("click", async (ev) => {
-        // 1. Party Checks
         const dcBtn = ev.target.closest(".wft-dc-btn");
         if (dcBtn) {
             ev.preventDefault();
             ev.stopPropagation();
-
             const config = JSON.parse(decodeURIComponent(dcBtn.dataset.config));
-            const title = dcBtn.dataset.title;
-            executePartyCheckDialog(config, title);
+            executePartyCheckDialog(config, dcBtn.dataset.title);
             return;
         }
 
-        // 2. Encounter Macros
         const macroBtn = ev.target.closest(".wft-macro-btn");
         if (macroBtn) {
             ev.preventDefault();
@@ -26,33 +120,28 @@ export function registerGlobalListeners() {
             return;
         }
 
-        // 3. Treasure Links
         const treasureBtn = ev.target.closest(".wft-treasure-btn");
         if (treasureBtn) {
             ev.preventDefault();
             ev.stopPropagation();
             const uuid = treasureBtn.dataset.uuid;
-
             if (uuid) {
                 fromUuid(uuid).then(item => {
                     if (item) item.sheet.render(true);
-                    else ui.notifications.warn("Item not found. It may have been deleted or the UUID is incorrect.");
+                    else ui.notifications.warn("Item not found.");
                 });
             }
             return;
         }
 
-        // 4. Variables
         const varBtn = ev.target.closest(".wft-var-btn");
         if (varBtn) {
             ev.preventDefault();
             ev.stopPropagation();
 
-            // Only GMs can write to "world" scoped settings
             if (!game.user.isGM) return ui.notifications.warn("Only the GM can edit variables.");
 
             const id = varBtn.dataset.id;
-
             let vars = foundry.utils.deepClone(game.settings.get("wolfies-foundry-tools", "variables") || {});
             const v = vars[id];
 
@@ -83,16 +172,13 @@ export function registerGlobalListeners() {
 
                         let newVal = input.value;
 
-                        // Enforce data types
                         if (v.type === "bool") newVal = (newVal === "true");
                         else if (v.type === "int") newVal = parseInt(newVal) || 0;
                         else if (v.type === "float") newVal = parseFloat(newVal) || 0;
 
-                        // Save the newly mutated object back into the database
                         vars[id].value = newVal;
                         await game.settings.set("wolfies-foundry-tools", "variables", vars);
 
-                        // INSTANT UI UPDATE: Format the display string and rewrite the HTML of all active buttons
                         let displayVal = newVal;
                         if (v.type === "bool") displayVal = newVal ? "True" : "False";
 

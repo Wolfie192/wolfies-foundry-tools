@@ -1,14 +1,15 @@
-2026/08/14-09:25:26.580 7548 Recovering log #58
-2026/08/14-09:25:26.594 7548 Delete type=0 #58
-2026/08/14-09:25:26.594 7548 Delete type=3 #56
-2026/08/14-09:27:16.869 31c8 Level-0 table #63: started
-2026/08/14-09:27:16.873 31c8 Level-0 table #63: 4559 bytes OK
-2026/08/14-09:27:16.880 31c8 Delete type=0 #61
-2026/08/14-09:27:16.894 31c8 Manual compaction at level-0 from '!macros!9KxEpsGHhrSRfF15' @ 72057594037927935 : 1 .. '!macros!yRBZCymVJ3uxJ45i' @ 0 : 0; will stop at '!macros!rFoM6UcwpkExgVan' @ 61 : 0
-2026/08/14-09:27:16.894 31c8 Compacting 1@0 + 1@1 files
-2026/08/14-09:27:16.902 31c8 Generated table #64@0: 6 keys, 29039 bytes
-2026/08/14-09:27:16.902 31c8 Compacted 1@0 + 1@1 files => 29039 bytes
-2026/08/14-09:27:16.909 31c8 compacted to: files[ 0 1 0 0 0 0 0 ]
-2026/08/14-09:27:16.909 31c8 Delete type=2 #55
-2026/08/14-09:27:16.909 31c8 Delete type=2 #63
-2026/08/14-09:27:16.916 31c8 Manual compaction at level-0 from '!macros!rFoM6UcwpkExgVan' @ 61 : 0 .. '!macros!yRBZCymVJ3uxJ45i' @ 0 : 0; will stop at (end)
+2026/08/14-12:52:52.149 19a4 Recovering log #84
+2026/08/14-12:52:52.163 19a4 Delete type=0 #84
+2026/08/14-12:52:52.163 19a4 Delete type=3 #82
+2026/08/14-12:53:26.109 7d08 Level-0 table #89: started
+2026/08/14-12:53:26.114 7d08 Level-0 table #89: 25959 bytes OK
+2026/08/14-12:53:26.120 7d08 Delete type=0 #87
+2026/08/14-12:53:26.140 7d08 Manual compaction at level-0 from '!macros!1ZyFOEjgZYF5E4Zc' @ 72057594037927935 : 1 .. '!macros!yRBZCymVJ3uxJ45i' @ 0 : 0; will stop at (end)
+2026/08/14-12:53:26.140 7d08 Manual compaction at level-1 from '!macros!1ZyFOEjgZYF5E4Zc' @ 72057594037927935 : 1 .. '!macros!yRBZCymVJ3uxJ45i' @ 0 : 0; will stop at '!macros!1ZyFOEjgZYF5E4Zc' @ 64 : 1
+2026/08/14-12:53:26.140 7d08 Compacting 1@1 + 1@2 files
+2026/08/14-12:53:26.150 7d08 Generated table #90@1: 1 keys, 13009 bytes
+2026/08/14-12:53:26.150 7d08 Compacted 1@1 + 1@2 files => 13009 bytes
+2026/08/14-12:53:26.156 7d08 compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/08/14-12:53:26.156 7d08 Delete type=2 #72
+2026/08/14-12:53:26.156 7d08 Delete type=2 #89
+2026/08/14-12:53:26.170 7d08 Manual compaction at level-1 from '!macros!1ZyFOEjgZYF5E4Zc' @ 64 : 1 .. '!macros!yRBZCymVJ3uxJ45i' @ 0 : 0; will stop at (end)
