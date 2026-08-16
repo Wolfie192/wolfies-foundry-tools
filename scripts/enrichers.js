@@ -19,7 +19,6 @@ export function registerEnrichers() {
             const span = document.createElement("span");
             span.classList.add("pfs-dynamic-value");
 
-            // Common wrapping style to apply to all WFT buttons
             const wrapStyle = "white-space: normal; word-break: break-word; height: auto; display: inline-block; line-height: 1.2; padding-top: 2px; padding-bottom: 2px;";
 
             if (params.type === "dc") {

@@ -29,7 +29,7 @@ export function getPartyPFSStats(baseLevel) {
         else if (totalCP <= 11) bracket = "low_10_11";
         else if (totalCP <= 13) bracket = "low_12_13";
         else if (totalCP <= 15) bracket = "low_14_15";
-        else bracket = "low_16_18"; // Fixed: Was previously "low_16_19"
+        else bracket = "low_16_18";
     } else {
         if (totalCP <= 18) bracket = "high_0_18";
         else if (totalCP <= 22) bracket = "high_19_22";

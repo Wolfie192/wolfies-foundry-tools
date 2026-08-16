@@ -59,7 +59,6 @@ export async function executePartyCheckDialog(config, checkTitle) {
         };
     });
 
-    // Simplify the dialog title
     let dialogTitle = config.secret ? "Secret Party Check" : "Party Check";
 
     const templateData = { members: processedMembers, config: config };

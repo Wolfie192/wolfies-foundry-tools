@@ -1,6 +1,5 @@
 import { executePartyCheckDialog } from "./dialogs.js";
 
-// --- THE PLAYER DISPLAY WINDOW ---
 const { ApplicationV2 } = foundry.applications.api;
 class ResearchPlayerApp extends ApplicationV2 {
     static DEFAULT_OPTIONS = {
@@ -82,7 +81,6 @@ class ResearchPlayerApp extends ApplicationV2 {
         content.innerHTML = result;
     }
 }
-// ------------------------------------------
 
 export function registerGlobalListeners() {
     Hooks.on("updateUser", (user, changes) => {
