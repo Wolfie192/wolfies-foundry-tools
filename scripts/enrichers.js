@@ -1,6 +1,7 @@
 import { getPartyPFSStats } from "./math.js";
 
 export function registerEnrichers() {
+
     CONFIG.TextEditor.enrichers.push({
         pattern: /@WFT\[(.*?)\]/g,
         enricher: async (match, options) => {
@@ -119,6 +120,72 @@ export function registerEnrichers() {
                 }
             }
 
+            return span;
+        }
+    });
+
+    CONFIG.TextEditor.enrichers.push({
+        pattern: /@WFT\[type:var\|id:(.+?)\]/g,
+        enricher: async (match, options) => {
+            let id = match[1];
+            let vars = game.settings.get("wolfies-foundry-tools", "variables") || {};
+            let varData = vars[id];
+
+            if (!varData) {
+                if (game.user.isGM) {
+                    let err = document.createElement("span");
+                    err.style.color = "red"; err.style.fontSize = "10px"; err.innerText = `[Missing Var: ${id}]`;
+                    return err;
+                }
+                return document.createTextNode("");
+            }
+
+            if (varData.conditions && varData.conditions.rules && varData.conditions.rules.length > 0) {
+                let results = varData.conditions.rules.map(rule => {
+                    let targetVar = vars[rule.varId];
+                    if (!targetVar) return false;
+
+                    let a = targetVar.value;
+                    let b = rule.val;
+
+                    if (targetVar.type === "int" || targetVar.type === "float") b = Number(b);
+                    if (targetVar.type === "bool") b = (b === "true" || b === true);
+
+                    if (rule.op === "==") return a == b;
+                    if (rule.op === "!=") return a != b;
+                    if (rule.op === ">=") return a >= b;
+                    if (rule.op === "<=") return a <= b;
+                    if (rule.op === ">") return a > b;
+                    if (rule.op === "<") return a < b;
+                    return false;
+                });
+
+                let isTrue = varData.conditions.logicMode === "&&"
+                    ? results.every(r => r === true)
+                    : results.some(r => r === true);
+
+                if (!isTrue) return document.createTextNode("");
+            }
+
+            const span = document.createElement("span");
+            span.classList.add("wft-var-display");
+            span.dataset.varId = id;
+
+            if (varData.type === "text") {
+                span.innerHTML = await TextEditor.enrichHTML(varData.value, { async: true });
+            } else {
+                span.innerText = varData.value;
+                span.style.fontWeight = "bold";
+                span.style.color = "#4a8094";
+                span.style.padding = "0 4px";
+                span.style.background = "rgba(74, 128, 148, 0.1)";
+                span.style.borderRadius = "3px";
+            }
+
+            if (game.user.isGM) {
+                span.style.cursor = "pointer";
+                span.title = `GM: Click to edit ${varData.name}`;
+            }
             return span;
         }
     });

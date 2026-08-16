@@ -38,12 +38,23 @@ export async function executePartyCheckDialog(config, checkTitle) {
                 let slug = s.name ? s.name.toLowerCase().replace(/[^a-z0-9]/g, '-') : "";
                 let existing = validOptionsMap.get(slug);
                 if (!existing || configuredDC < existing.dc) {
-                    let actorSkill = actor.skills ? actor.skills[slug] : null;
+                    let finalMod = 0;
+                    let finalLabel = s.name;
+
+                    if (slug === "perception") {
+                        finalMod = actor.perception?.mod ?? actor.system?.attributes?.perception?.mod ?? 0;
+                        finalLabel = "Perception";
+                    } else {
+                        let actorSkill = actor.skills ? actor.skills[slug] : null;
+                        finalMod = actorSkill ? (actorSkill.mod ?? actorSkill.check?.mod ?? 0) : 0;
+                        finalLabel = actorSkill ? actorSkill.label : s.name;
+                    }
+
                     validOptionsMap.set(slug, {
                         slug: slug,
-                        name: actorSkill ? actorSkill.label : s.name,
+                        name: finalLabel,
                         dc: configuredDC,
-                        mod: actorSkill ? (actorSkill.mod ?? actorSkill.check?.mod ?? 0) : 0
+                        mod: finalMod
                     });
                 }
             }
